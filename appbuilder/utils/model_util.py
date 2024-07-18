@@ -32,47 +32,53 @@ model_name_mapping = [
     ("EB-turbo-AppBuilder专用版", "ERNIE Speed-AppBuilder"),
 ]
 
+
 class RemoteModel(object):
     r"""远程模型类，用于封装远程模型的名称信息.
-         参数:
-            name(str):
-                模型名称。
-            short_name(str):
-                模型简称, 可能存在多个
-         """
+    参数:
+       name(str):
+           模型名称。
+       short_name(str):
+           模型简称, 可能存在多个
+    """
+
     def __init__(self, remote_name: str):
         self.remote_name = remote_name
         self.short_names = []
-    
+
     def register_short_name(self, short_name: str):
         r"""注册模型简称.
-         参数:
-            short_name(str):
-                模型简称。
-         """
+        参数:
+           short_name(str):
+               模型简称。
+        """
         if short_name not in self.short_names:
             self.short_names.append(short_name)
 
     def get_remote_name_by_short_name(self, short_name: str) -> Optional[str]:
         r"""根据模型简称获取模型名称.
-         参数:
-            short_name(str):
-                模型简称。
-         """
+        参数:
+           short_name(str):
+               模型简称。
+        """
         # TODO(chengmo): 使用logging 替换 print，解决print多次的问题
         if short_name == "eb-turbo-appbuilder":
-            print("Deprecate warning: model [eb-turbo-appbuilder] is deprecated, please use [ERNIE Speed-AppBuilder]")
+            print(
+                "Deprecate warning: model [eb-turbo-appbuilder] is deprecated, please use [ERNIE Speed-AppBuilder]"
+            )
 
         if short_name in self.short_names:
             return self.remote_name
         return None
 
-class RemoteModelCollector():
+
+class RemoteModelCollector:
     r"""远程模型收集器，用于收集远程模型信息. 是一个全局单例
     有两个核心功能：
     1、注册远程模型名和本地short_name
     2、根据short_name获取远程模型名
     """
+
     _instance = None
     _initialized = False
 
@@ -89,31 +95,31 @@ class RemoteModelCollector():
         if cls._instance is None:
             cls._instance = object.__new__(cls)
         return cls._instance
-    
+
     def register_remote_model_name(self, remote_name: str, short_name: str):
         r"""注册远程模型名和本地short_name.
-         参数:
-            remote_name(str):
-                远程模型名称。
-            short_name(str):
-                模型简称。
-         """
+        参数:
+           remote_name(str):
+               远程模型名称。
+           short_name(str):
+               模型简称。
+        """
         if remote_name not in self.remote_models:
             self.remote_models[remote_name] = RemoteModel(remote_name)
-        
+
         self.remote_models[remote_name].register_short_name(short_name)
-    
+
     def get_remote_name_by_short_name(self, short_name: str) -> Optional[str]:
         r"""根据short_name获取远程模型名.
-         参数:
-            short_name(str):
-                模型简称。
-         """
+        参数:
+           short_name(str):
+               模型简称。
+        """
         for remote_model in self.remote_models.values():
             remote_name = remote_model.get_remote_name_by_short_name(short_name)
             if remote_name is not None:
                 return remote_name
-        
+
         return None
 
 
@@ -121,34 +127,34 @@ remote_model_collector = RemoteModelCollector()
 for remote_name, short_name in model_name_mapping:
     remote_model_collector.register_remote_model_name(remote_name, short_name)
 
+
 class GetModelListRequest(proto.Message):
     r"""获取模型列表请求体
-         参数:
-            apiTypefilter(str):
-                根据apiType过滤，["chat", "completions", "embeddings", "text2image"]，不填包括所有的。
-         """
-    apiTypefilter: MutableSequence[str] = proto.RepeatedField(
-        proto.STRING,
-        number=1
-    )
+    参数:
+       apiTypefilter(str):
+           根据apiType过滤，["chat", "completions", "embeddings", "text2image"]，不填包括所有的。
+    """
+
+    apiTypefilter: MutableSequence[str] = proto.RepeatedField(proto.STRING, number=1)
 
 
 class GetModelListResponse(proto.Message):
     r"""获取模型列表返回体
-         参数:
-            request_id(str):
-                网关层的请求ID.
-            log_id(str):
-                请求ID。
-            success(bool):
-                是否成功的返回。
-            error_code(int):
-                错误码。
-            error_msg(str):
-                错误信息。
-            result(ModelListResult):
-                模型列表。
-         """
+    参数:
+       request_id(str):
+           网关层的请求ID.
+       log_id(str):
+           请求ID。
+       success(bool):
+           是否成功的返回。
+       error_code(int):
+           错误码。
+       error_msg(str):
+           错误信息。
+       result(ModelListResult):
+           模型列表。
+    """
+
     request_id: str = proto.Field(
         proto.STRING,
         number=1,
@@ -182,12 +188,13 @@ class GetModelListResponse(proto.Message):
 
 class ModelListResult(proto.Message):
     r"""模型列表
-         参数:
-            common(ModelData):
-                预置服务模型信息。
-            custom(ModelData):
-                自定义服务模型信息。
-         """
+    参数:
+       common(ModelData):
+           预置服务模型信息。
+       custom(ModelData):
+           自定义服务模型信息。
+    """
+
     common: MutableSequence["ModelData"] = proto.RepeatedField(
         proto.MESSAGE,
         number=1,
@@ -203,18 +210,19 @@ class ModelListResult(proto.Message):
 
 class ModelData(proto.Message):
     r"""模型基本信息
-         参数:
-            name(str):
-                服务名称。
-            url(int):
-                服务endpoint。
-            apiType(str):
-                服务类型：chat、completions、embeddings、text2image。
-            chargeStatus(int):
-                付费状态。
-            versionList(int):
-                服务版本列表。
-         """
+    参数:
+       name(str):
+           服务名称。
+       url(int):
+           服务endpoint。
+       apiType(str):
+           服务类型：chat、completions、embeddings、text2image。
+       chargeStatus(int):
+           付费状态。
+       versionList(int):
+           服务版本列表。
+    """
+
     name: str = proto.Field(
         proto.STRING,
         number=1,
@@ -243,18 +251,19 @@ class ModelData(proto.Message):
 
 class Version(proto.Message):
     r"""服务版本
-         参数:
-            id(str):
-                服务版本id，仅自定义服务有该字段。
-            aiModelId(str):
-                发布该服务版本的模型id，仅自定义服务有该字段。
-            aiModelVersionId(str):
-                发布该服务版本的模型版本id，仅自定义服务有该字段。
-            trainType(str):
-                服务基础模型类型。
-            serviceStatus(str):
-                服务状态。
-         """
+    参数:
+       id(str):
+           服务版本id，仅自定义服务有该字段。
+       aiModelId(str):
+           发布该服务版本的模型id，仅自定义服务有该字段。
+       aiModelVersionId(str):
+           发布该服务版本的模型版本id，仅自定义服务有该字段。
+       trainType(str):
+           服务基础模型类型。
+       serviceStatus(str):
+           服务状态。
+    """
+
     id: str = proto.Field(
         proto.STRING,
         number=1,
@@ -280,26 +289,28 @@ class Version(proto.Message):
 class Models:
     r"""
     模型工具类，提供模型列表接口。
-     """
+    """
 
-    def __init__(self,
-                 client: HTTPClient = None,
-                 secret_key: Optional[str] = None,
-                 gateway: str = ""
-                 ):
+    def __init__(
+        self,
+        client: HTTPClient = None,
+        secret_key: Optional[str] = None,
+        gateway: str = "",
+    ):
         r"""Models初始化方法.
 
-            参数:
-                client(obj:`HTTPClient`): 客户端实例，用于发送请求。
-                secret_key(str,可选): 用户鉴权token, 默认从环境变量中获取: os.getenv("APPBUILDER_TOKEN", "").
-                gateway(str, 可选): 后端网关服务地址，默认从环境变量中获取: os.getenv("GATEWAY_URL", "")
-            返回：
-                无
+        参数:
+            client(obj:`HTTPClient`): 客户端实例，用于发送请求。
+            secret_key(str,可选): 用户鉴权token, 默认从环境变量中获取: os.getenv("APPBUILDER_TOKEN", "").
+            gateway(str, 可选): 后端网关服务地址，默认从环境变量中获取: os.getenv("GATEWAY_URL", "")
+        返回：
+            无
         """
         self.http_client = client or HTTPClient(secret_key, gateway)
 
-    def list(self, request: GetModelListRequest = None, timeout: float = None,
-             retry: int = 0) -> GetModelListResponse:
+    def list(
+        self, request: GetModelListRequest = None, timeout: float = None, retry: int = 0
+    ) -> GetModelListResponse:
         """
         返回用户的模型列表信息。
 
@@ -316,16 +327,21 @@ class Models:
             request = GetModelListRequest()
         data = GetModelListRequest.to_json(request)
         headers = self.http_client.auth_header()
-        headers['content-type'] = 'application/json'
+        headers["content-type"] = "application/json"
         if retry != self.http_client.retry.total:
             self.http_client.retry.total = retry
-        response = self.http_client.session.post(url, data=data, headers=headers, timeout=timeout)
+        response = self.http_client.session.post(
+            url, data=data, headers=headers, timeout=timeout
+        )
         self.http_client.check_response_header(response)
-        data = response.json()
+        data = response.raw_data.result
+        print(data)
         self.http_client.check_response_json(data)
         request_id = self.http_client.response_request_id(response)
         self.__class__._check_service_error(request_id, data)
-        response = GetModelListResponse.from_json(payload=json.dumps(data),  ignore_unknown_fields=True)
+        response = GetModelListResponse.from_json(
+            payload=json.dumps(data), ignore_unknown_fields=True
+        )
         response.request_id = request_id
         return response
 
@@ -333,14 +349,15 @@ class Models:
     def _check_service_error(request_id: str, data: dict):
         r"""服务response参数检查
 
-            参数:
-                data (dict) : body返回
-            返回：
-                无
+        参数:
+            data (dict) : body返回
+        返回：
+            无
         """
         if "error_code" in data and "error_msg" in data:
             if data["error_code"] != 0:
                 raise appbuilder.AppBuilderServerException(
                     request_id=request_id,
                     service_err_code=data["error_code"],
-                    service_err_message=data["error_msg"])
+                    service_err_message=data["error_msg"],
+                )
