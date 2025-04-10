@@ -81,7 +81,7 @@ class SseServerTransport:
         logger.debug(f"SseServerTransport initialized with endpoint: {endpoint}")
 
     @asynccontextmanager
-    async def connect_sse(self, scope: Scope, receive: Receive, send: Send):
+    async def connect_sse(self, scope: Scope, receive: Receive, send: Send, sk: str):
         if scope["type"] != "http":
             logger.error("connect_sse received non-HTTP request")
             raise ValueError("connect_sse can only handle HTTP requests")
@@ -98,6 +98,8 @@ class SseServerTransport:
 
         session_id = uuid4()
         session_uri = f"{quote(self._endpoint)}?session_id={session_id.hex}"
+        if sk:
+            session_uri = session_uri + f"&sk={sk}"
         self._read_stream_writers[session_id] = read_stream_writer
         logger.debug(f"Created new session with ID: {session_id}")
 
@@ -164,7 +166,13 @@ class SseServerTransport:
             logger.warning("Received request without session_id")
             response = Response("session_id is required", status_code=400)
             return await response(scope, receive, send)
-
+        
+        sk = request.query_params.get("sk")
+        if sk is None:
+            logger.warning(
+                f"Received request without sk: {session_id_param}")
+            response = Response("sk is required", status_code=400)
+            return await response(scope, receive, send)
         try:
             session_id = UUID(hex=session_id_param)
             logger.debug(f"Parsed session ID: {session_id}")
@@ -180,10 +188,18 @@ class SseServerTransport:
             return await response(scope, receive, send)
 
         body = await request.body()
+        # todo: sk加进去, 其他参数可以用类似的方式
         logger.debug(f"Received JSON: {body}")
         if self._redis_client:
             response = Response("Accepted", status_code=202)
             json_data = await request.json()
+
+            if sk:
+                params = json_data.get("params", {})
+                arguments = params.get("arguments", {})
+                arguments["sk"] = sk
+                json_data["arguments"] = arguments
+                json_data["params"] = params
             await response(scope, receive, send)
             await self._redis_client.publish(
                 self._redis_channel(session_id), pickle.dumps(json_data)
